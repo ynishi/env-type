@@ -131,10 +131,7 @@ impl EnvType {
     /// ```
     pub fn from_env_key<T: EnvKey>() -> Self {
         match std::env::var(T::key()) {
-            Ok(env) => match Self::from_str(&env) {
-                Ok(env) => env,
-                Err(_) => Self::default(),
-            },
+            Ok(env) => Self::from_str(&env).unwrap_or_default(),
             Err(_) => Self::default(),
         }
     }
