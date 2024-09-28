@@ -98,6 +98,49 @@ impl EnvKey for EnvType {
     }
 }
 
+/// AsEnvTypeStr is a trait that covert some type to a string with Key Type, which is the environment type.
+/// This trait can extend the existing configuration struct to get the environment type.
+///
+/// # Example
+///
+/// ```
+/// use env_type::types::{EnvType, EnvKey, AsEnvStr};
+/// use std::collections::HashMap;
+///
+/// struct Config {
+///    map: HashMap<&'static str, String>,
+/// }
+///
+/// impl AsEnvStr for Config {
+///   fn as_env_str<T: EnvKey>(&self) -> String {
+///      self.map.get(T::key()).map(|v|v.to_string()).unwrap_or_default()
+///  }
+/// }
+/// let mut map = HashMap::new();
+/// map.insert("ENV", "test".to_string());
+/// let config = Config {
+///   map,
+/// };
+/// assert_eq!("test", config.as_env_str::<EnvType>());
+///
+/// ```
+pub trait AsEnvStr {
+    fn as_env_str<T: EnvKey>(&self) -> String;
+}
+
+/// EnvType is an implementation of the AsEnvStr trait.
+/// EnvType is baesd on env var.
+impl AsEnvStr for EnvType {
+    fn as_env_str<T: EnvKey>(&self) -> String {
+        std::env::var(T::key()).unwrap_or_default()
+    }
+}
+
+/// FromKey<V, S> is a trait like From<T> with a key.
+pub trait FromKey<V, S> {
+    fn from_key<K: EnvKey>(value: V) -> S;
+}
+
 /// AsEnvTypeStr is a trait that covert some type to a string, which is the environment type.
 /// This trait can extend the existing configuration struct to get the environment type.
 ///
@@ -141,12 +184,13 @@ impl EnvType {
     /// assert_eq!(EnvType::Prod, env);
     /// ```
     pub fn from_env() -> Self {
-        Self::from_env_key::<Self>()
+        Self::from_env_types::<Self, Self>(Self::default())
     }
 
     /// EnvType::from_env_key is a function that returns the environment type from the environment variable.
     /// The default environment type is Dev.
-    ///     /// # Example
+    ///
+    /// # Example
     ///
     /// ```
     /// use env_type::types::EnvType;
@@ -156,11 +200,13 @@ impl EnvType {
     /// let env = EnvType::from_env_key::<EnvType>();
     /// assert_eq!(EnvType::Test, env);
     /// ```
-    pub fn from_env_key<T: EnvKey>() -> Self {
-        match std::env::var(T::key()) {
-            Ok(env) => Self::from_str(&env).unwrap_or_default(),
-            Err(_) => Self::default(),
-        }
+    pub fn from_env_key<K: EnvKey>() -> Self {
+        Self::from_env_types::<Self, K>(Self::default())
+    }
+
+    /// EnvType::from_env_types is a function that returns the EnvType from AsEnvStr and EnvKey.
+    pub fn from_env_types<S: AsEnvStr, K: EnvKey>(s: S) -> Self {
+        Self::from_str(&s.as_env_str::<K>()).unwrap_or_default()
     }
 
     /// EnvType::from_env_str is a function that returns the environment type from the string.
