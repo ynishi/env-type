@@ -6,4 +6,14 @@
 //!
 //! The crate also provides a trait to get the environment key from the environment variable.
 //! The environment key is used to get the environment type from the environment variable.
+//!
+//! ## Features
+//!
+//! env-type crate has the following features:
+//!
+//! - `shuttle`: This feature is used to get the environment type from the secret store.
+//! - `all`: This feature is used to enable all features.
 pub mod types;
+
+#[cfg(feature = "shuttle")]
+pub mod secret_store;

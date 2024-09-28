@@ -1,4 +1,4 @@
-use env_type::types::EnvType;
+use env_type::types::*;
 use std::str::FromStr;
 
 fn main() {
