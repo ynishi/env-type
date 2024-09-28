@@ -98,6 +98,33 @@ impl EnvKey for EnvType {
     }
 }
 
+/// AsEnvTypeStr is a trait that covert some type to a string, which is the environment type.
+/// This trait can extend the existing configuration struct to get the environment type.
+///
+/// # Example
+///
+/// ```
+/// use env_type::types::{EnvType, AsEnvTypeStr};
+///
+/// struct Config {
+///    env_str: String,
+/// }
+///
+/// impl AsEnvTypeStr for Config {
+///   fn as_env_type_str(&self) -> Option<String> {
+///      Some(self.env_str.clone())
+///  }
+/// }
+/// let config = Config {
+///   env_str: "dev".to_string(),
+/// };
+/// assert_eq!("dev", config.as_env_type_str().unwrap());
+///
+/// ```
+pub trait AsEnvTypeStr {
+    fn as_env_type_str(&self) -> Option<String>;
+}
+
 impl EnvType {
     /// EnvType::from_env is a function that returns the environment type from the environment variable.
     /// This is deligated to from_env_key with EnvType as default from env key.
@@ -134,6 +161,33 @@ impl EnvType {
             Ok(env) => Self::from_str(&env).unwrap_or_default(),
             Err(_) => Self::default(),
         }
+    }
+
+    /// EnvType::from_env_str is a function that returns the environment type from the string.
+    /// The default environment type is Dev.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use env_type::types::{EnvType, AsEnvTypeStr};
+    /// use std::str::FromStr;
+    ///
+    /// struct Config {
+    ///   env_str: String,
+    /// }
+    /// let config = Config {
+    ///  env_str: "Production".to_string(),
+    /// };
+    ///
+    /// impl AsEnvTypeStr for Config {
+    ///   fn as_env_type_str(&self) -> Option<String> {
+    ///     Some(self.env_str.clone())
+    ///   }
+    /// }
+    /// let env = EnvType::from_env_str(config);
+    /// assert_eq!(EnvType::Prod, env);
+    pub fn from_env_str<T: AsEnvTypeStr>(t: T) -> Self {
+        Self::from_str(t.as_env_type_str().unwrap_or_default().as_str()).unwrap_or_default()
     }
 }
 
@@ -199,5 +253,21 @@ mod tests {
         assert_eq!(EnvType::from_env_key::<TestEnv>(), EnvType::Test);
         // fallback to default
         assert_eq!(EnvType::from_env_key::<EnvType>(), EnvType::Dev);
+    }
+
+    #[test]
+    fn test_from_env_str() {
+        struct TestEnv(&'static str);
+
+        impl AsEnvTypeStr for TestEnv {
+            fn as_env_type_str(&self) -> Option<String> {
+                Some(self.0.to_string())
+            }
+        }
+
+        assert_eq!(EnvType::from_env_str(TestEnv("d")), EnvType::Dev);
+        assert_eq!(EnvType::from_env_str(TestEnv("t")), EnvType::Test);
+        assert_eq!(EnvType::from_env_str(TestEnv("s")), EnvType::Stg);
+        assert_eq!(EnvType::from_env_str(TestEnv("p")), EnvType::Prod);
     }
 }

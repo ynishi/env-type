@@ -6,8 +6,6 @@ env-type crate is a library that provides an enum to represent the environment t
 It is used to determine the environment type of the application.
 The environment type is used to determine the configuration of the application.
 
-## usage
+## changelog
 
-```shell
-cargo add env-type
-```
+https://github.com/ynishi/env-type/releases
