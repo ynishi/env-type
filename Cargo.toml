@@ -6,7 +6,7 @@ license = "MIT"
 repository = "https://github.com/ynishi/env-type"
 readme = "README.md"
 name = "env-type"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 
 [features]
