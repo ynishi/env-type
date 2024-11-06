@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use thiserror::Error;
 
 /// EnvType is an enum that represents the environment type.
 /// EnvType is derived from the strum crate, which provides the ability to convert the string to the enum.
@@ -11,18 +12,11 @@ use std::str::FromStr;
 ///
 /// let env = EnvType::from_str("d").unwrap();
 /// assert_eq!(EnvType::Dev, env);
+///
+/// let custom_env = EnvType::Custom("Custom");
+/// assert_eq!(EnvType::Custom("Custom"), custom_env);
 /// ```
-#[derive(
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    strum::EnumString,
-    strum::EnumIs,
-    strum::VariantArray,
-    Default,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, strum::EnumString, strum::EnumIs, Default, Hash)]
 #[strum(serialize_all = "PascalCase")]
 pub enum EnvType {
     #[default]
@@ -64,6 +58,22 @@ pub enum EnvType {
         serialize = "P"
     )]
     Prod,
+    Custom(&'static str),
+}
+
+/// EnvError is an enum that represents the environment error type.
+#[derive(Debug, Error)]
+pub enum EnvError {
+    #[error("No current environment specified")]
+    NoCurrentEnv,
+    #[error("Context not found for type")]
+    ContextNotFound,
+    #[error("Context value not found for env")]
+    ContextValueNotFound,
+    #[error("Invalid configuration: {0}")]
+    InvalidConfig(String),
+    #[error("Provider error: {0}")]
+    ProviderError(String),
 }
 
 /// EnvKey is a trait that represents the environment key.
@@ -129,7 +139,7 @@ pub trait AsEnvStr {
 }
 
 /// EnvType is an implementation of the AsEnvStr trait.
-/// EnvType is baesd on env var.
+/// EnvType is based on env var.
 impl AsEnvStr for EnvType {
     fn as_env_str<T: EnvKey>(&self) -> String {
         std::env::var(T::key()).unwrap_or_default()
