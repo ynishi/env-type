@@ -2,15 +2,17 @@ use crate::context::{Context, ContextMarker};
 use crate::types::{EnvError, EnvType};
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 /// Environment type that holds contexts, and the current environment.
 /// The current environment is the environment type.
 /// The contexts are the context type.
 /// The context type is a key-value pair of the environment type and the value.
 /// The value is the value for the environment type.
+#[derive(Clone, Debug)]
 pub struct Environment {
     current: EnvType,
-    contexts: HashMap<TypeId, Box<dyn Any + Send + Sync>>,
+    contexts: HashMap<TypeId, Arc<dyn Any + Send + Sync>>,
 }
 
 /// Environment struct implementation
@@ -44,7 +46,7 @@ impl Environment {
 #[derive(Default)]
 pub struct EnvironmentBuilder {
     current: Option<EnvType>,
-    contexts: HashMap<TypeId, Box<dyn Any + Send + Sync>>,
+    contexts: HashMap<TypeId, Arc<dyn Any + Send + Sync>>,
 }
 
 /// EnvironmentBuilder implementation
@@ -105,7 +107,7 @@ impl EnvironmentBuilder {
     }
 
     pub fn with_context<M: ContextMarker>(mut self, context: Context<M>) -> Self {
-        self.contexts.insert(TypeId::of::<M>(), Box::new(context));
+        self.contexts.insert(TypeId::of::<M>(), Arc::new(context));
         self
     }
 
